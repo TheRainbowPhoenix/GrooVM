@@ -82,9 +82,10 @@ export class Dropdown extends UIControl {
 }
 
 export class Button extends UIControl {
-  constructor(id, label, rect) {
+  constructor(id, label, rect, iconSpec = null) {
     super(id, rect);
     this.label = label;
+    this.iconSpec = iconSpec;
   }
 
   touch(phase, x, y) {
@@ -100,13 +101,38 @@ export class Button extends UIControl {
     ctx.fillRect(this.rect.x, this.rect.y, this.rect.width, this.rect.height);
     ctx.strokeStyle = "#6cf";
     ctx.strokeRect(this.rect.x, this.rect.y, this.rect.width, this.rect.height);
-    ctx.fillStyle = "#fff";
-    ctx.font = "12px sans-serif";
-    ctx.fillText(
-      this.label,
-      this.rect.x + 6,
-      this.rect.y + this.rect.height / 2 + 4
-    );
+    if (this.iconSpec?.image && this.iconSpec.loaded) {
+      const { sx, sy, sw, sh } = this.iconSpec;
+      const padding = 4;
+      const dw = this.rect.height - padding * 2;
+      const dh = dw;
+      ctx.drawImage(
+        this.iconSpec.image,
+        sx,
+        sy,
+        sw,
+        sh,
+        this.rect.x + padding,
+        this.rect.y + padding,
+        dw,
+        dh
+      );
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(
+        this.label,
+        this.rect.x + padding * 2 + dw,
+        this.rect.y + this.rect.height / 2 + 4
+      );
+    } else {
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(
+        this.label,
+        this.rect.x + 6,
+        this.rect.y + this.rect.height / 2 + 4
+      );
+    }
     ctx.restore();
   }
 }
@@ -173,12 +199,21 @@ export class GBoxUI extends UIControl {
     this.buttons = [];
     this.itemSelectors = [];
     this.currentScreen = 0;
+    this.transportButtons = [];
+    this.modeTabs = [];
+    this.partTabs = [];
+    this.cpuUsage = 0;
+    this.tempo = 128;
+    this.outGain = 0;
   }
 
   touch(phase, x, y) {
     this.dropdownLists.forEach((d) => d.touch(phase, x, y));
     this.buttons.forEach((b) => b.touch(phase, x, y));
     this.itemSelectors.forEach((s) => s.touch(phase, x, y));
+    this.transportButtons.forEach((b) => b.touch(phase, x, y));
+    this.modeTabs.forEach((b) => b.touch(phase, x, y));
+    this.partTabs.forEach((b) => b.touch(phase, x, y));
   }
 
   draw(ctx) {
@@ -186,9 +221,34 @@ export class GBoxUI extends UIControl {
     ctx.fillStyle = "#090b10";
     ctx.fillRect(this.rect.x, this.rect.y, this.rect.width, this.rect.height);
     ctx.restore();
+    this.drawTransport(ctx);
+    this.drawTabs(ctx);
     this.dropdownLists.forEach((d) => d.draw(ctx));
     this.buttons.forEach((b) => b.draw(ctx));
     this.itemSelectors.forEach((s) => s.draw(ctx));
+  }
+
+  drawTransport(ctx) {
+    const barHeight = 48;
+    ctx.save();
+    ctx.fillStyle = "#0f141c";
+    ctx.fillRect(this.rect.x, this.rect.y + this.rect.height - barHeight, this.rect.width, barHeight);
+    this.transportButtons.forEach((b) => b.draw(ctx));
+    ctx.fillStyle = "#8cf";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(`TEMPO: ${this.tempo.toFixed(1)}`, this.rect.x + 360, this.rect.y + this.rect.height - 28);
+    ctx.fillText(`OUT GAIN: ${this.outGain.toFixed(1)} dB`, this.rect.x + 500, this.rect.y + this.rect.height - 28);
+    ctx.fillText(`CPU: ${(this.cpuUsage * 100).toFixed(1)}%`, this.rect.x + 660, this.rect.y + this.rect.height - 28);
+    ctx.restore();
+  }
+
+  drawTabs(ctx) {
+    ctx.save();
+    ctx.fillStyle = "#0c1018";
+    ctx.fillRect(this.rect.x, this.rect.y, this.rect.width, 32);
+    this.partTabs.forEach((b) => b.draw(ctx));
+    ctx.restore();
+    this.modeTabs.forEach((b) => b.draw(ctx));
   }
 }
 
@@ -196,8 +256,8 @@ export class GBoxUI extends UIControl {
  * Build a demo UI that mirrors the native file filters:
  * flgsynth/flgsample/flgroove/spectra/wav
  */
-export function createDemoGBoxUI(canvas) {
-  const ui = new GBoxUI({ x: 0, y: 0, width: canvas.width, height: canvas.height });
+export function createDemoGBoxUI(dimensions) {
+  const ui = new GBoxUI({ x: 0, y: 0, width: dimensions.width, height: dimensions.height });
   const extItems = [
     { label: ".flgsynth", enabled: true },
     { label: ".flgsample", enabled: true },
@@ -219,6 +279,26 @@ export function createDemoGBoxUI(canvas) {
     { label: "Drum Kit", enabled: true },
   ]);
   ui.itemSelectors.push(selector);
+
+  // Transport bar buttons (bottom)
+  const iconSpec = (sx, sy, sw, sh) => ({ sx, sy, sw, sh, image: null, loaded: false });
+  const baseY = dimensions.height - 44;
+  const playBtn = new Button(10, "Play", { x: 20, y: baseY, width: 70, height: 32 }, iconSpec(0, 0, 64, 64));
+  const recBtn = new Button(11, "Rec", { x: 100, y: baseY, width: 70, height: 32 }, iconSpec(64, 0, 64, 64));
+  const metroBtn = new Button(12, "Metro", { x: 180, y: baseY, width: 80, height: 32 }, iconSpec(128, 0, 64, 64));
+  ui.transportButtons.push(playBtn, recBtn, metroBtn);
+
+  // Mode tabs (lower row)
+  const modeLabels = ["Keyboard", "Score Edit", "Controls", "Automation"];
+  modeLabels.forEach((label, i) => {
+    ui.modeTabs.push(new Button(20 + i, label, { x: 280 + i * 120, y: baseY, width: 110, height: 32 }));
+  });
+
+  // Part tabs (top bar)
+  const partLabels = ["Kick", "Bass", "Synth", "Lead", "Chords", "SFX"];
+  partLabels.forEach((label, i) => {
+    ui.partTabs.push(new Button(40 + i, label, { x: 10 + i * 90, y: 4, width: 80, height: 24 }));
+  });
 
   return ui;
 }
@@ -284,4 +364,25 @@ export function bootDemoApp(canvas) {
   };
 
   return { ui, teardown };
+}
+
+export async function loadTransportSprites(ui) {
+  const sheetPaths = [
+    "./obb/wrap.png",
+    "./obb/wrap 2.png",
+    "./obb/wrap 15.png",
+    "./obb/wrap.tga",
+    "./obb/wrap 2.tga",
+    "./obb/wrap 15.tga",
+  ];
+  const img = new Image();
+  const path = sheetPaths.find(() => true);
+  img.src = path;
+  await img.decode().catch(() => {});
+  ui.transportButtons.forEach((btn) => {
+    if (btn.iconSpec) {
+      btn.iconSpec.image = img;
+      btn.iconSpec.loaded = true;
+    }
+  });
 }
