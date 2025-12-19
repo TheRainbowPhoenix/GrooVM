@@ -222,3 +222,64 @@ export function createDemoGBoxUI(canvas) {
 
   return ui;
 }
+
+/**
+ * Minimal boot routine to emulate the Android Activity -> GLSurfaceView chain:
+ * - creates the UI
+ * - sets up pointer events
+ * - runs a continuous render loop (akin to RENDERMODE_CONTINUOUSLY)
+ * - posts a 100ms UI-thread idle tick (like the Java handler in ILGLSurfaceView)
+ */
+export function bootDemoApp(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  const ui = createDemoGBoxUI(canvas);
+
+  const toPhase = (type) => {
+    if (type === "pointerdown") return "begin";
+    if (type === "pointermove") return "move";
+    if (type === "pointerup" || type === "pointercancel") return "end";
+    return null;
+  };
+
+  const handlePointer = (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+    const phase = toPhase(evt.type);
+    if (!phase) return;
+    ui.touch(phase, x, y);
+  };
+
+  ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach((t) =>
+    canvas.addEventListener(t, handlePointer)
+  );
+
+  // UI thread idle tick every ~100ms
+  const uiIdleInterval = setInterval(() => {
+    // placeholder for future native-like UI thread work
+  }, 100);
+
+  let running = true;
+  const render = () => {
+    if (!running) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ui.draw(ctx);
+    requestAnimationFrame(render);
+  };
+  render();
+
+  const teardown = () => {
+    running = false;
+    clearInterval(uiIdleInterval);
+    ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach((t) =>
+      canvas.removeEventListener(t, handlePointer)
+    );
+  };
+
+  return { ui, teardown };
+}
