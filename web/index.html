@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Groove Machine Mobile (Web UI mock)</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #05070c;
+        color: #fff;
+        font-family: sans-serif;
+      }
+      #app {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      canvas {
+        flex: 1 1 auto;
+      }
+      .hud {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 8px 10px;
+        border: 1px solid #246;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="surface"></canvas>
+    </div>
+    <div class="hud">
+      <div><strong>Render mode:</strong> Continuous (requestAnimationFrame)</div>
+      <div><strong>UI idle tick:</strong> 100 ms (setInterval)</div>
+      <div><strong>Input:</strong> Pointer events → GBoxUI.touch</div>
+    </div>
+    <script type="module">
+      import { bootDemoApp } from "./gbox_ui.js";
+
+      const canvas = document.getElementById("surface");
+
+      // Resize the canvas to match the window, similar to GL viewport updates.
+      const resize = () => {
+        canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+        canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1);
+      };
+      const ro = new ResizeObserver(() => {
+        resize();
+      });
+      ro.observe(document.body);
+      resize();
+
+      const { teardown } = bootDemoApp(canvas);
+
+      window.addEventListener("beforeunload", () => {
+        teardown();
+        ro.disconnect();
+      });
+    </script>
+  </body>
+</html>
