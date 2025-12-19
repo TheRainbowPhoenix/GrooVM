@@ -272,26 +272,49 @@ export function createDemoGBoxUI(dimensions) {
   const saveBtn = new Button(3, "Save Groove", { x: 340, y: 20, width: 120, height: 32 });
   ui.buttons.push(loadBtn, saveBtn);
 
-  const selector = new ItemSelector(4, { x: 20, y: 80, width: canvas.width - 40, height: canvas.height - 120 }, [
-    { label: "Preset 1", enabled: true },
-    { label: "Preset 2", enabled: true },
-    { label: "Groove Demo", enabled: true },
-    { label: "Drum Kit", enabled: true },
-  ]);
+  const selector = new ItemSelector(
+    4,
+    {
+      x: 20,
+      y: 80,
+      width: (globalThis.canvas?.width || dimensions.width) - 40,
+      height: (globalThis.canvas?.height || dimensions.height) - 120,
+    },
+    [
+      { label: "Preset 1", enabled: true },
+      { label: "Preset 2", enabled: true },
+      { label: "Groove Demo", enabled: true },
+      { label: "Drum Kit", enabled: true },
+    ]
+  );
   ui.itemSelectors.push(selector);
 
   // Transport bar buttons (bottom)
   const iconSpec = (sx, sy, sw, sh) => ({ sx, sy, sw, sh, image: null, loaded: false });
   const baseY = dimensions.height - 44;
-  const playBtn = new Button(10, "Play", { x: 20, y: baseY, width: 70, height: 32 }, iconSpec(0, 0, 64, 64));
-  const recBtn = new Button(11, "Rec", { x: 100, y: baseY, width: 70, height: 32 }, iconSpec(64, 0, 64, 64));
-  const metroBtn = new Button(12, "Metro", { x: 180, y: baseY, width: 80, height: 32 }, iconSpec(128, 0, 64, 64));
+  // First row of wrap sheet: Keyboard, Score, Controls, Automation, Play, Record
+  const atlasSize = 64;
+  const playBtn = new Button(10, "Play", { x: 20, y: baseY, width: 90, height: 32 }, iconSpec(atlasSize * 4, 0, atlasSize, atlasSize));
+  const recBtn = new Button(11, "Rec", { x: 120, y: baseY, width: 90, height: 32 }, iconSpec(atlasSize * 5, 0, atlasSize, atlasSize));
+  const metroBtn = new Button(12, "Metro", { x: 220, y: baseY, width: 90, height: 32 }, iconSpec(atlasSize * 6, 0, atlasSize, atlasSize));
   ui.transportButtons.push(playBtn, recBtn, metroBtn);
 
   // Mode tabs (lower row)
-  const modeLabels = ["Keyboard", "Score Edit", "Controls", "Automation"];
-  modeLabels.forEach((label, i) => {
-    ui.modeTabs.push(new Button(20 + i, label, { x: 280 + i * 120, y: baseY, width: 110, height: 32 }));
+  const modeLabels = [
+    { label: "Keyboard", icon: 0 },
+    { label: "Score Edit", icon: 1 },
+    { label: "Controls", icon: 2 },
+    { label: "Automation", icon: 3 },
+  ];
+  modeLabels.forEach((entry, i) => {
+    ui.modeTabs.push(
+      new Button(
+        20 + i,
+        entry.label,
+        { x: 320 + i * 120, y: baseY, width: 110, height: 32 },
+        iconSpec(atlasSize * entry.icon, 0, atlasSize, atlasSize)
+      )
+    );
   });
 
   // Part tabs (top bar)
@@ -311,6 +334,7 @@ export function createDemoGBoxUI(dimensions) {
  * - posts a 100ms UI-thread idle tick (like the Java handler in ILGLSurfaceView)
  */
 export function bootDemoApp(canvas) {
+  globalThis.canvas = canvas;
   const dpr = window.devicePixelRatio || 1;
   const cssWidth = canvas.clientWidth;
   const cssHeight = canvas.clientHeight;
