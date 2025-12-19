@@ -145,3 +145,42 @@ void gbox_ui_update_all_values(GBoxUI *ui) {
 void gbox_ui_display_screen(GBoxUI *ui, int screen_index) {
   ui->current_screen = screen_index;
 }
+
+static void init_tab(GBoxButton *btn, int id, const char *label, float x) {
+  gbox_button_init(btn, id, label, (UIRect){x, 0.0f, 100.0f, 28.0f});
+}
+
+void gbox_ui_transport_init(GBoxTransportBar *bar,
+                            float tempo_bpm,
+                            float out_gain_db) {
+  gbox_button_init(&bar->groove_icon, 100, "Groove", (UIRect){0, 0, 72, 32});
+  gbox_button_init(&bar->back, 101, "Back", (UIRect){76, 0, 64, 32});
+  gbox_button_init(&bar->play, 102, "Play", (UIRect){144, 0, 64, 32});
+  gbox_button_init(&bar->record, 103, "Rec", (UIRect){212, 0, 64, 32});
+  gbox_button_init(&bar->metronome, 104, "Metro", (UIRect){280, 0, 72, 32});
+  bar->tempo_bpm = tempo_bpm;
+  bar->out_gain_db = out_gain_db;
+  bar->cpu_usage = 0.0f;
+
+  const char *mode_labels[4] = {"Keyboard", "Score Edit", "Controls", "Automation"};
+  for (int i = 0; i < 4; ++i) {
+    init_tab(&bar->mode_tabs[i], 200 + i, mode_labels[i], 360.0f + i * 96.0f);
+  }
+
+  const char *part_labels[6] = {"Kick", "Bass", "Synth", "Lead", "Chords", "SFX"};
+  for (int i = 0; i < 6; ++i) {
+    init_tab(&bar->part_tabs[i], 300 + i, part_labels[i], 360.0f + i * 80.0f);
+  }
+}
+
+void gbox_ui_transport_set_tempo(GBoxTransportBar *bar, float tempo_bpm) {
+  bar->tempo_bpm = tempo_bpm;
+}
+
+void gbox_ui_transport_set_gain(GBoxTransportBar *bar, float gain_db) {
+  bar->out_gain_db = gain_db;
+}
+
+void gbox_ui_transport_set_cpu(GBoxTransportBar *bar, float cpu_usage) {
+  bar->cpu_usage = cpu_usage;
+}

@@ -29,6 +29,7 @@ This repository originally contained a single 97k‑line decompiled file (`libgr
   * `GBoxItemSelector` backs scrolling lists with enable/disable states and cursor management (`MakeSelVisible`, `BoundTopLeftItem`, `MouseWheel`).【F:libgroovemachinemobile.so.c†L272-L289】
   * `CFocusGroup` clusters controls (sliders/buttons/labels) and relays recent parameter changes from the synth/track editors.【F:libgroovemachinemobile.so.c†L186-L205】
   * `CPresetSelControl` wraps preset browsing (next/prev/load) and display rendering.【F:libgroovemachinemobile.so.c†L542-L561】
+  * Transport/top bars: `GBoxUI::UpdateTransportControls` orchestrates play/rec/metronome, tempo/out-gain display, CPU meter, and tab buttons that swap screens (Keyboard / Score Edit / Controls / Automation) plus per-part tabs (Kick, Bass, Synth, Lead, Chords, SFX).【F:libgroovemachinemobile.so.c†L300-L338】
 * The new `include/ui_controls.h`, `src/ui_controls.c`, and `src/gbox_ui.c` factor these responsibilities into portable C structs and helper functions. `web/gbox_ui.js` mirrors the structures for a canvas/WebGL host, enabling a gradual WASM port while keeping data formats aligned with the native loaders.
 
 ## Next steps toward a web port

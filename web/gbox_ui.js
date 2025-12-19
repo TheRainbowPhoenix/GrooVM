@@ -232,12 +232,14 @@ export function createDemoGBoxUI(canvas) {
  */
 export function bootDemoApp(canvas) {
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
+  const cssWidth = canvas.clientWidth;
+  const cssHeight = canvas.clientHeight;
+  canvas.width = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const ui = createDemoGBoxUI(canvas);
+  const ui = createDemoGBoxUI({ width: cssWidth, height: cssHeight });
 
   const toPhase = (type) => {
     if (type === "pointerdown") return "begin";
@@ -248,8 +250,8 @@ export function bootDemoApp(canvas) {
 
   const handlePointer = (evt) => {
     const rect = canvas.getBoundingClientRect();
-    const x = evt.clientX - rect.left;
-    const y = evt.clientY - rect.top;
+    const x = (evt.clientX - rect.left) * (canvas.width / dpr / rect.width);
+    const y = (evt.clientY - rect.top) * (canvas.height / dpr / rect.height);
     const phase = toPhase(evt.type);
     if (!phase) return;
     ui.touch(phase, x, y);
@@ -267,7 +269,7 @@ export function bootDemoApp(canvas) {
   let running = true;
   const render = () => {
     if (!running) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
     ui.draw(ctx);
     requestAnimationFrame(render);
   };

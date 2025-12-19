@@ -80,6 +80,19 @@ typedef struct {
   int current_screen;
 } GBoxUI;
 
+typedef struct {
+  GBoxButton groove_icon;
+  GBoxButton back;
+  GBoxButton play;
+  GBoxButton record;
+  GBoxButton metronome;
+  float tempo_bpm;
+  float out_gain_db;
+  float cpu_usage;
+  GBoxButton mode_tabs[4];   /* Keyboard, Score Edit, Controls, Automation */
+  GBoxButton part_tabs[6];   /* Kick, Bass, Synth, Lead, Chords, SFX */
+} GBoxTransportBar;
+
 void ui_control_init(UIControl *control, int id, UIRect rect);
 void ui_control_set_visible(UIControl *control, int visible);
 void ui_control_set_input(UIControl *control, int enabled);
@@ -128,6 +141,12 @@ void gbox_ui_attach_item_selectors(GBoxUI *ui,
                                    GBoxItemSelector *selectors,
                                    size_t count);
 void gbox_ui_touch(GBoxUI *ui, UITouchPhase phase, float x, float y);
+void gbox_ui_transport_init(GBoxTransportBar *bar,
+                            float tempo_bpm,
+                            float out_gain_db);
+void gbox_ui_transport_set_tempo(GBoxTransportBar *bar, float tempo_bpm);
+void gbox_ui_transport_set_gain(GBoxTransportBar *bar, float gain_db);
+void gbox_ui_transport_set_cpu(GBoxTransportBar *bar, float cpu_usage);
 
 #ifdef __cplusplus
 }
